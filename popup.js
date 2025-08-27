@@ -1,3 +1,4 @@
+let currProjectId = null;
 // popup.js
 console.log('Popup script loaded');
 document.addEventListener('DOMContentLoaded', () => {
@@ -36,19 +37,24 @@ document.getElementById('replaceBtn').addEventListener('click', () => {
 });
 
 document.getElementById('resetBtn').addEventListener('click', () => {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        chrome.tabs.sendMessage(tabs[0].id, { action: "reset" });
-    });
+    if (currProjectId) {
+        chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+            chrome.tabs.sendMessage(tabs[0].id, {
+                action: "replace",
+                projectId: currProjectId
+            });
+        });
+    }
 });
 
 document.getElementById('project-dropdown').addEventListener('change', function () {
     if (this.value) {
-
-        if (this.value) {
+        currProjectId = this.value;
+        if (currProjectId) {
             chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
                 chrome.tabs.sendMessage(tabs[0].id, {
                     action: "replace",
-                    projectId: this.value
+                    projectId: currProjectId
                 });
             });
         }

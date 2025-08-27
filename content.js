@@ -1,6 +1,5 @@
 // 存储原始文本和元素
-let originalTexts = [];
-let elements = [];
+let projectMap = null;
 // 在content.js开头添加初始化检查
 console.log('Content script initialized');
 
@@ -14,11 +13,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         chrome.storage.local.get('csvData', (result) => {
             const csvData = result.csvData;
             const projectId = message.projectId; // 先声明变量
-            console.log('接收到替换请求，项目ID:', projectId);
-            console.log('当前CSV数据:', csvData);
-            const projectMap = csvData.data[projectId];
+            projectMap = csvData.data[projectId];
             // 执行替换逻辑
-            const count = performTextReplacement(projectMap);
+            const count = performTextReplacement();
 
             // ✅ 改用 sendResponse 返回结果（非嵌套消息）
             sendResponse({ type: "replaceResult", count: 1 });
@@ -26,52 +23,60 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         return asyncResponse; // 关键！保持通道开放
     }
-
-    if (message.action === "reset") {
-        // 恢复原始文本
-        elements.forEach((element, index) => {
-            if (originalTexts[index]) {
-                element.textContent = originalTexts[index];
-            }
-        });
-    }
 });
 
 // 文本替换函数
-function performTextReplacement(projectMap) {
+function performTextReplacement() {
     let replacementCount = 0;
     console.log('项目map:', projectMap);
 
     const nodesToReplace = [];
     const container = document.querySelector('.container');
-    if (!container) {
-        console.warn('未找到容器元素，跳过替换');
-        return 0;
-    }
-    // 创建TreeWalker遍历所有文本节点
-    const walker = document.createTreeWalker(
-        container,
-        NodeFilter.SHOW_TEXT,
-        {
-            acceptNode: node =>
-                node.parentNode.tagName !== 'SCRIPT' &&
-                node.parentNode.tagName !== 'STYLE'
-        }
-    );
+    if (container) {
+        const walker = document.createTreeWalker(
+            container,
+            NodeFilter.SHOW_TEXT,
+            {
+                acceptNode: node =>
+                    node.parentNode.tagName !== 'SCRIPT' &&
+                    node.parentNode.tagName !== 'STYLE'
+            }
+        );
 
-    // 第一阶段：收集节点
-    while (walker.nextNode()) {
-        const node = walker.currentNode;
-        const originalText = node.nodeValue.trim();
+        // 第一阶段：收集节点
+        while (walker.nextNode()) {
+            const node = walker.currentNode;
+            const originalText = node.nodeValue.trim();
 
-        if (originalText && projectMap[originalText]) {
-            nodesToReplace.push({
-                node,
-                text: originalText,
-                parent: node.parentNode // 保存父节点引用
-            });
+            if (originalText && projectMap[originalText]) {
+                nodesToReplace.push({
+                    node,
+                    text: originalText,
+                    parent: node.parentNode // 保存父节点引用
+                });
+            }
         }
     }
+    // 阶段2：处理特定 <span> 的文本节点
+    // 阶段2：处理特定 <span> 的文本节点
+    // const buttonSpans = document.querySelectorAll('span.n-button__content');
+    // buttonSpans.forEach(span => {
+    //     // 定位注释节点前的文本节点
+    //     const textNode = [...span.childNodes].find(node =>
+    //         node.nodeType === Node.TEXT_NODE && node.textContent.trim() !== ""
+    //     );
+
+    //     if (textNode) {
+    //         const originalText = textNode.textContent.trim();
+    //         if (projectMap[originalText]) {
+    //             nodesToReplace.push({
+    //                 node: textNode,
+    //                 text: originalText,
+    //                 parent: span // 父节点为 span 本身
+    //             });
+    //         }
+    //     }
+    // });
 
     // 第二阶段：批量替换
     nodesToReplace.forEach(({ node, text, parent }) => {
@@ -81,28 +86,34 @@ function performTextReplacement(projectMap) {
 
         parent.replaceChild(wrapper, node); // 在原始父节点上替换
     });
-
-    // 监听动态内容变化[4](@ref)
-    const observer = new MutationObserver(mutations => {
-        for (const mutation of mutations) {
-            if (mutation.type === 'childList') {
-                mutation.addedNodes.forEach(node => {
-                    if (node.nodeType === Node.TEXT_NODE && projectMap[node.nodeValue.trim()]) {
-                        // 动态内容替换
-                        const wrapper = document.createElement('span');
-                        wrapper.dataset.originalText = node.nodeValue.trim();
-                        wrapper.textContent = projectMap[node.nodeValue.trim()].name;
-                        node.parentNode.replaceChild(wrapper, node);
-                    }
-                });
-            }
-        }
-    });
-
-    observer.observe(container, {
-        childList: true,
-        subtree: true,
-        characterData: true
-    });
     return replacementCount;
 }
+
+function handleContainer(container) {
+    performTextReplacement();
+}
+
+// 监听动态新增
+const observer = new MutationObserver(mutations => {
+    mutations.forEach(mutation => {
+        if (mutation.type === 'childList') {
+            mutation.addedNodes.forEach(node => {
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                    const container = node.matches('.container')
+                        ? node
+                        : node.querySelector('.container');
+                    if (container) handleContainer(container);
+                }
+            });
+        }
+    });
+});
+
+// 检测初始元素
+document.querySelectorAll('.container').forEach(handleContainer);
+
+// 启动监听
+observer.observe(document.body, {
+    childList: true,
+    subtree: true
+});
