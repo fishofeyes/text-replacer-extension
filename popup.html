@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>文本替换工具</title>
+    <link rel="stylesheet" href="popup.css">
+    <meta charset="UTF-8">
+
+</head>
+
+<body>
+    <div class="container">
+        <h1>文本替换工具</h1>
+        <div class="section">
+            <input type="file" id="csvFile" accept=".csv">
+            <button id="replaceBtn">用CSV替换文本</button>
+            <div id="replaceStatus"></div>
+        </div>
+
+        <div class="section">
+            <h3>选择项目</h3>
+            <div id="dropdown-container">
+                <select id="project-dropdown">
+                    <option value="">请选择项目</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="section">
+            <button id="resetBtn">重置页面</button>
+        </div>
+    </div>
+
+    <script src="popup.js"></script>
+    <script src="csvParser.js"></script>
+</body>
+
+</html>
