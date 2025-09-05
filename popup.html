@@ -31,6 +31,65 @@
         <div class="section">
             <button id="resetBtn">混淆映射</button>
         </div>
+        <div class="section">
+            <h3>数据表格</h3>
+            <div class="tab-buttons">
+                <button class="tab-btn active" data-tab="event-table">上报事件</button>
+                <button class="tab-btn" data-tab="param-table">上报参数</button>
+                <button class="tab-btn" data-tab="value-table">上报参数值</button>
+            </div>
+
+            <!-- 事件名称表格 -->
+            <div id="event-table" class="table-container active">
+                <input type="text" id="event-search" placeholder="搜索原事件名称 (enName)" class="table-search-input">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>事件名称</th>
+                            <th>原事件名称</th>
+                            <th>混淆值</th>
+                        </tr>
+                    </thead>
+                    <tbody id="event-table-body">
+                    </tbody>
+                </table>
+                <div class="no-data" id="event-no-data">请先选择一个项目</div>
+            </div>
+
+            <!-- 参数名称表格 -->
+            <div id="param-table" class="table-container">
+                <input type="text" id="param-search" placeholder="搜索原参数名 (key)" class="table-search-input">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>原参数名</th>
+                            <th>混淆值</th>
+                        </tr>
+                    </thead>
+                    <tbody id="param-table-body">
+                        <!-- 更多行将通过JavaScript动态添加 -->
+                    </tbody>
+                </table>
+                <div class="no-data" id="param-no-data">请先选择一个项目</div>
+            </div>
+
+            <!-- 上报参数值表格 -->
+            <div id="value-table" class="table-container">
+                <input type="text" id="value-search" placeholder="搜索上报参数名 (key)" class="table-search-input">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>上报参数名</th>
+                            <th>混淆值</th>
+                        </tr>
+                    </thead>
+                    <tbody id="value-table-body">
+                        <!-- 更多行将通过JavaScript动态添加 -->
+                    </tbody>
+                </table>
+                <div class="no-data" id="value-no-data">请先选择一个项目</div>
+            </div>
+        </div>
     </div>
 
     <script src="popup.js"></script>

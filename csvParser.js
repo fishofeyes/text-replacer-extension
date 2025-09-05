@@ -76,9 +76,54 @@ function parseExcelData(excelData) {
             }
         }
     }
+
+    // 解析参数名
     return { projects, result };
 }
 
+// parase excel params 
+function parseExcelParams(excelData) {
+    const params = {};
+    const projects = excelData[0].slice(1); //
+    // 遍历数据行（从第二行开始，假设第一行是标题）
+    for (let i = 1; i < excelData.length; i++) {
+        const row = excelData[i];
+        if (!row || row.length === 0) continue;
+
+        const pName = row[0].trim(); // 第一列内容
+
+        for (let j = 1; j < row.length; j++) {
+            const projectName = projects[j - 1];
+            if (!params[projectName]) {
+                params[projectName] = {};
+            }
+            params[projectName][pName] = (row[j] ?? "-").trim();
+        }
+
+    }
+    return params;
+}
+
+function parseValuesData(excelData) {
+    const values = {};
+    const projects = excelData[0].slice(1); //
+    // 遍历数据行（从第二行开始，假设第一行是标题）
+    for (let i = 1; i < excelData.length; i++) {
+        const row = excelData[i];
+        if (!row || row.length === 0) continue;
+
+        const pName = row[0].trim(); // 第一列内容
+
+        for (let j = 1; j < row.length; j++) {
+            const projectName = projects[j - 1];
+            if (!values[projectName]) {
+                values[projectName] = {};
+            }
+            values[projectName][pName] = (row[j] ?? "-").trim();
+        }
+    }
+    return values;
+}
 // 创建下拉列表
 function createDropdown(projectNames) {
     console.log('Creating dropdown with projects:', projectNames);

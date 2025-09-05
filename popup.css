@@ -79,3 +79,81 @@ input[type="file"] {
     font-size: 14px;
     text-align: center;
 }
+
+.tab-buttons {
+    display: flex;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #ddd;
+}
+
+.tab-btn {
+    padding: 8px 16px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-bottom: none;
+    border-radius: 4px 4px 0 0;
+    margin-right: 4px;
+    cursor: pointer;
+    color: #000;
+    transition: background-color 0.3s;
+}
+
+.tab-btn.active {
+    background: #eee;
+    font-weight: bold;
+}
+
+.tab-btn:hover {
+    background: #e0e0e0;
+}
+
+.table-container {
+    display: none;
+    margin-top: 10px;
+}
+
+.table-container.active {
+    display: block;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 15px;
+}
+
+.data-table th,
+.data-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+.data-table th {
+    background-color: #f5f5f5;
+    font-weight: bold;
+}
+
+.no-data {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+    font-style: italic;
+}
+
+.table-search-input {
+    width: 100%;
+    padding: 10px 16px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 15px;
+    box-sizing: border-box;
+    /* 确保padding不会使输入框溢出容器 */
+}
+
+.table-search-input:focus {
+    outline: none;
+    border-color: #4e73df;
+    box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.1);
+}

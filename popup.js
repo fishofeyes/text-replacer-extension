@@ -1,16 +1,8 @@
 let currProjectId = null;
+let parsedData = null;
 // popup.js
-console.log('Popup script loaded');
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('Popup DOM fully loaded and parsed');
-    chrome.storage.local.get('csvMap', (result) => {
-        console.log('已有存储的CSV映射，更新下拉列表', result.csvMap);
-        if (result.csvMap) {
-            // 2. 更新下拉列表（若需展示）
-            createDropdown(result.csvMap.projects)
-        }
-    });
-
+    tableSearch();
     const dropZone = document.getElementById('drop-zone');
     const fileInput = document.getElementById('csvFile');
     const replaceStatus = document.getElementById('replaceStatus');
@@ -49,6 +41,27 @@ document.addEventListener('DOMContentLoaded', () => {
         handleFile(e.target.files[0]);
     });
 
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const tableContainers = document.querySelectorAll('.table-container');
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', function () {
+            const targetTab = this.getAttribute('data-tab');
+
+            // 更新按钮状态
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+
+            // 更新表格显示状态
+            tableContainers.forEach(container => {
+                container.classList.remove('active');
+                if (container.id === targetTab) {
+                    container.classList.add('active');
+                }
+            });
+        });
+    });
+
 
     // 文件处理函数
     function handleFile(file) {
@@ -71,21 +84,36 @@ document.addEventListener('DOMContentLoaded', () => {
         reader.onload = function (e) {
             try {
                 const data = e.target.result;
-                let parsedData;
-
                 if (isExcel) {
                     // 读取Excel文件
                     const workbook = XLSX.read(data, { type: 'binary' });
 
                     // 获取第一个工作表
-                    const firstSheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[firstSheetName];
+                    for (let i = 0; i < workbook.SheetNames.length; i++) {
+                        const firstSheetName = workbook.SheetNames[i];
+                        const worksheet = workbook.Sheets[firstSheetName];
 
-                    // 将工作表转换为JSON
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                        // 将工作表转换为JSON
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                        switch (i) {
+                            case 0:
+                                parsedData = parseExcelData(jsonData);
+                                break;
+                            case 1:
+                                // 这里可以处理第二个工作表的数据
+                                // 例如，存储参数名和参数值
+                                parsedData["params"] = parseExcelParams(jsonData);
 
-                    // 转换为与原来CSV解析函数相同的格式
-                    parsedData = parseExcelData(jsonData);
+                                break;
+                            case 2:
+                                parsedData["values"] = parseValuesData(jsonData);
+                                break;
+                            // 转换为与原来CSV解析函数相同的格式
+                            default:
+                                break;
+                        }
+                    }
+
                 } else {
                     // 原有的CSV处理逻辑
                     const csvText = e.target.result;
@@ -96,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 createDropdown(parsedData.projects);
 
                 // 存储解析结果以便后续使用
-                chrome.storage.local.set({ csvData: parsedData });
+                chrome.storage.local.set({ csvData: parsedData.result });
 
                 replaceStatus.textContent = '文件解析成功！';
             } catch (error) {
@@ -143,8 +171,99 @@ document.getElementById('project-dropdown').addEventListener('change', function 
                 });
             });
         }
+
+        if (currProjectId) {
+            updateAllTables(currProjectId, parsedData);
+        } else {
+            clearAllTables();
+        }
     }
 });
+
+// 更新所有表格
+function updateAllTables(project, projectData) {
+    updateEventTable(project, projectData);
+    updateParamTable(project, projectData);
+    updateValueTable(project, projectData);
+}
+
+// 清空所有表格
+function clearAllTables() {
+    document.getElementById('event-table-body').innerHTML = '';
+    document.getElementById('param-table-body').innerHTML = '';
+    document.getElementById('value-table-body').innerHTML = '';
+
+    document.getElementById('event-no-data').style.display = 'block';
+    document.getElementById('param-no-data').style.display = 'block';
+    document.getElementById('value-no-data').style.display = 'block';
+}
+
+
+function updateEventTable(project, projectData) {
+    const eventTableBody = document.getElementById('event-table-body');
+    const noDataMsg = document.getElementById('event-no-data');
+    eventTableBody.innerHTML = '';
+    const projectEvents = projectData.result[project];
+    if (projectEvents && Object.keys(projectEvents).length > 0) {
+        noDataMsg.style.display = 'none';
+        for (const [obfuscated, data] of Object.entries(projectEvents)) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                            <td>${data.name}</td>
+                            <td>${data.enName}</td>
+                            <td>${obfuscated}</td>
+                        `;
+            eventTableBody.appendChild(row);
+        }
+    } else {
+        noDataMsg.style.display = 'block';
+    }
+}
+
+// 更新参数名称表格
+function updateParamTable(project, projectData) {
+    const paramTableBody = document.getElementById('param-table-body');
+    const noDataMsg = document.getElementById('param-no-data');
+    paramTableBody.innerHTML = '';
+
+    const projectParams = projectData.params[project];
+    if (projectParams && Object.keys(projectParams).length > 0) {
+        noDataMsg.style.display = 'none';
+        for (const [paramName, obfuscated] of Object.entries(projectParams)) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                            <td>${paramName}</td>
+                            <td>${obfuscated}</td>
+                        `;
+            paramTableBody.appendChild(row);
+        }
+    } else {
+        noDataMsg.style.display = 'block';
+    }
+}
+
+// 更新上报参数值表格
+function updateValueTable(project, projectData) {
+    const valueTableBody = document.getElementById('value-table-body');
+    const noDataMsg = document.getElementById('value-no-data');
+    valueTableBody.innerHTML = '';
+
+    const projectParams = projectData.values[project];
+    if (projectParams && Object.keys(projectParams).length > 0) {
+        noDataMsg.style.display = 'none';
+        for (const [paramName, obfuscated] of Object.entries(projectParams)) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                            <td>${paramName}</td>
+                            <td>${obfuscated}</td>
+                        `;
+            valueTableBody.appendChild(row);
+        }
+    } else {
+        noDataMsg.style.display = 'block';
+    }
+}
+
 
 // 监听来自content script的消息
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -158,3 +277,60 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 });
 
+
+// search功能
+function tableSearch() {
+    // 获取三个搜索框元素
+    const eventSearchInput = document.getElementById('event-search');
+    const paramSearchInput = document.getElementById('param-search');
+    const valueSearchInput = document.getElementById('value-search');
+
+    // 为事件名称表格添加筛选功能 (搜索原事件名称 enName)
+    eventSearchInput.addEventListener('keyup', function () {
+        const filterValue = this.value.toLowerCase(); // 获取搜索框的值并转为小写
+        const tableBody = document.getElementById('event-table-body');
+        const rows = tableBody.getElementsByTagName('tr');
+
+        for (let row of rows) {
+            // 获取当前行的第二列单元格，即"原事件名称"列 (索引为1，因为索引从0开始)
+            const enNameCell = row.cells[1];
+            if (enNameCell) {
+                const cellText = enNameCell.textContent.toLowerCase(); // 获取单元格文本并转为小写
+                // 如果单元格文本包含搜索关键词，显示该行，否则隐藏
+                row.style.display = cellText.includes(filterValue) ? '' : 'none';
+            }
+        }
+    });
+
+    // 为参数名称表格添加筛选功能 (搜索原参数名 key)
+    paramSearchInput.addEventListener('keyup', function () {
+        const filterValue = this.value.toLowerCase();
+        const tableBody = document.getElementById('param-table-body');
+        const rows = tableBody.getElementsByTagName('tr');
+
+        for (let row of rows) {
+            // 获取当前行的第一列单元格，即"原参数名"列 (索引为0)
+            const keyCell = row.cells[0];
+            if (keyCell) {
+                const cellText = keyCell.textContent.toLowerCase();
+                row.style.display = cellText.includes(filterValue) ? '' : 'none';
+            }
+        }
+    });
+
+    // 为上报参数值表格添加筛选功能 (搜索上报参数名 key)
+    valueSearchInput.addEventListener('keyup', function () {
+        const filterValue = this.value.toLowerCase();
+        const tableBody = document.getElementById('value-table-body');
+        const rows = tableBody.getElementsByTagName('tr');
+
+        for (let row of rows) {
+            // 获取当前行的第一列单元格，即"上报参数名"列 (索引为0)
+            const keyCell = row.cells[0];
+            if (keyCell) {
+                const cellText = keyCell.textContent.toLowerCase();
+                row.style.display = cellText.includes(filterValue) ? '' : 'none';
+            }
+        }
+    });
+}

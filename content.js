@@ -2,18 +2,17 @@
 let projectMap = null;
 // 在content.js开头添加初始化检查
 console.log('Content script initialized');
-
 // 处理消息
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === "replace") {
         console.log('开始替换文本');
         // ✅ 声明异步响应
         const asyncResponse = true;
-        let csv = chrome.storage.local.get('csvData')
         chrome.storage.local.get('csvData', (result) => {
             const csvData = result.csvData;
             const projectId = message.projectId; // 先声明变量
-            projectMap = csvData.data[projectId];
+            projectMap = csvData[projectId];
+            console.log('项目映射:', projectMap);
             // 执行替换逻辑
             const count = performTextReplacement();
 
