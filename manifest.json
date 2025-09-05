@@ -1,6 +1,6 @@
 {
     "manifest_version": 3,
-    "name": "文本替换工具",
+    "name": "tba帮助工具",
     "version": "1.0",
     "incognito": "split",
     "content_security_policy": {
@@ -18,7 +18,7 @@
             "use_dynamic_url": false
         }
     ],
-    "description": "读取网页文本并用CSV内容替换",
+    "description": "tba帮助工具",
     "icons": {
         "16": "icons/icon16.png",
         "48": "icons/icon48.png"

@@ -7,7 +7,7 @@ body {
 .container {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 10px;
 }
 
 h1 {
@@ -19,7 +19,6 @@ h1 {
 .section {
     display: flex;
     flex-direction: column;
-    gap: 8px;
 }
 
 button {
@@ -43,4 +42,40 @@ input[type="file"] {
 #replaceStatus {
     font-size: 12px;
     color: #666;
+}
+
+/* 添加拖拽区域样式 */
+.drop-zone {
+    width: 100%;
+    min-height: 100px;
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-family: Arial, sans-serif;
+    color: #666;
+    cursor: pointer;
+    padding: 20px;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+}
+
+.drop-zone:hover,
+.drop-zone.dragover {
+    border-color: #007bff;
+    background-color: #f0f8ff;
+}
+
+.drop-zone p {
+    margin: 0;
+    font-size: 14px;
+}
+
+.status-text {
+    margin-top: 10px;
+    font-size: 14px;
+    text-align: center;
 }

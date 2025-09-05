@@ -2,19 +2,21 @@
 <html>
 
 <head>
-    <title>文本替换工具</title>
+    <title>tba帮助工具</title>
     <link rel="stylesheet" href="popup.css">
     <meta charset="UTF-8">
-
 </head>
 
 <body>
     <div class="container">
-        <h1>文本替换工具</h1>
+        <h1>tba帮助工具</h1>
         <div class="section">
-            <input type="file" id="csvFile" accept=".csv">
-            <button id="replaceBtn">解析CSV</button>
-            <div id="replaceStatus"></div>
+            <!-- 替换原来的 input[type=file] 为拖拽区域 -->
+            <div id="drop-zone" class="drop-zone">
+                <p>将xlsx文件拖拽到此处，或点击选择</p>
+                <input type="file" id="csvFile" accept=".xlsx" style="display: none;">
+            </div>
+            <div id="replaceStatus" class="status-text"></div>
         </div>
 
         <div class="section">
@@ -33,6 +35,7 @@
 
     <script src="popup.js"></script>
     <script src="csvParser.js"></script>
+    <script src="xlsx.core.min.js"></script>
 </body>
 
 </html>

@@ -48,9 +48,40 @@ function parseCSV(csvText) {
         data: result
     };
 }
+// 修改后的Excel数据解析函数
+function parseExcelData(excelData) {
+    // 根据你的描述，第一行(索引0)可能不是有效数据头，有效数据从第二行(索引1)开始
+    // 我们需要确定真正的标题行和数据起始行
+    const dataStartRowIndex = 1; // 数据从第二行开始（索引1）
+
+    const projects = excelData[0].slice(2); // 获取项目名称列表
+    const result = {};
+    // 遍历数据行（从指定的起始行开始）
+    for (let i = dataStartRowIndex; i < excelData.length; i++) {
+        const row = excelData[i];
+
+        // 跳过空行或无效行
+        if (!row || row.length === 0) continue;
+        // 添加项目下的所有数据（从第二列开始）
+        for (let j = 2; j < row.length; j++) {
+            const eventName = row[0].trim(); // 第一列内容
+            const enName = row[1].trim();    // 第二列内容
+            const projectName = projects[j - 2];
+            if (!result[projectName]) {
+                result[projectName] = {};
+            }
+            if (row[j] !== null && row[j] !== undefined && row[j] !== '') {
+                const key = row[j].trim();
+                result[projectName][key] = { name: eventName, enName: enName }
+            }
+        }
+    }
+    return { projects, result };
+}
 
 // 创建下拉列表
 function createDropdown(projectNames) {
+    console.log('Creating dropdown with projects:', projectNames);
     const dropdown = document.getElementById('project-dropdown');
     dropdown.innerHTML = ''; // 清空现有选项
     // 添加默认选项
