@@ -45,7 +45,8 @@
         }
     ],
     "host_permissions": [
-        "<all_urls>"
+        "https://ntba.gte666.com/*",
+        "https://stayfoolish.feishu.cn/*"
     ],
     "background": {
         "service_worker": "background.js"
