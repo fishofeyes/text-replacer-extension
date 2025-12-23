@@ -30,7 +30,6 @@
     "permissions": [
         "activeTab",
         "sidePanel",
-        "scripting",
         "storage"
     ],
     "content_scripts": [
