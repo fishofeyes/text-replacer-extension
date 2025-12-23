@@ -82,12 +82,12 @@ input[type="file"] {
 
 .tab-buttons {
     display: flex;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
     border-bottom: 1px solid #ddd;
 }
 
 .tab-btn {
-    padding: 8px 16px;
+    padding: 8px 10px;
     background: #fff;
     border: 1px solid #ddd;
     border-bottom: none;
@@ -119,7 +119,7 @@ input[type="file"] {
 .data-table {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
 }
 
 .data-table th,
@@ -144,7 +144,7 @@ input[type="file"] {
 .table-search-input {
     width: 100%;
     padding: 10px 16px;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
     border: 1px solid #ddd;
     border-radius: 6px;
     font-size: 15px;

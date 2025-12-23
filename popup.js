@@ -285,6 +285,10 @@ function tableSearch() {
     const paramSearchInput = document.getElementById('param-search');
     const valueSearchInput = document.getElementById('value-search');
 
+    const eventSearchInputTag = document.getElementById('event-tag');
+    const paramSearchInputTag = document.getElementById('param-tag');
+    const valueSearchInputTag = document.getElementById('value-tag');
+
     // 为事件名称表格添加筛选功能 (搜索原事件名称 enName)
     eventSearchInput.addEventListener('keyup', function () {
         const filterValue = this.value.toLowerCase(); // 获取搜索框的值并转为小写
@@ -294,10 +298,16 @@ function tableSearch() {
         for (let row of rows) {
             // 获取当前行的第二列单元格，即"原事件名称"列 (索引为1，因为索引从0开始)
             const enNameCell = row.cells[1];
+            const enNameCell2 = row.cells[2];
+            var show = false;
+            if (enNameCell2) {
+                const cellText = enNameCell2.textContent.toLowerCase(); // 获取单元格文本并转为小写
+                show = cellText.includes(filterValue)
+            }
             if (enNameCell) {
                 const cellText = enNameCell.textContent.toLowerCase(); // 获取单元格文本并转为小写
                 // 如果单元格文本包含搜索关键词，显示该行，否则隐藏
-                row.style.display = cellText.includes(filterValue) ? '' : 'none';
+                row.style.display = (cellText.includes(filterValue) || show) ? '' : 'none';
             }
         }
     });
@@ -311,9 +321,15 @@ function tableSearch() {
         for (let row of rows) {
             // 获取当前行的第一列单元格，即"原参数名"列 (索引为0)
             const keyCell = row.cells[0];
+            const keyCell2 = row.cells[1];
+            var show = false;
+            if (keyCell2) {
+                const cellText = keyCell2.textContent.toLowerCase(); // 获取单元格文本并转为小写
+                show = cellText.includes(filterValue)
+            }
             if (keyCell) {
                 const cellText = keyCell.textContent.toLowerCase();
-                row.style.display = cellText.includes(filterValue) ? '' : 'none';
+                row.style.display = (cellText.includes(filterValue) || show) ? '' : 'none';
             }
         }
     });
@@ -327,9 +343,130 @@ function tableSearch() {
         for (let row of rows) {
             // 获取当前行的第一列单元格，即"上报参数名"列 (索引为0)
             const keyCell = row.cells[0];
+            const keyCell2 = row.cells[1];
+            var show = false;
+            if (keyCell2) {
+                const cellText = keyCell2.textContent.toLowerCase(); // 获取单元格文本并转为小写
+                show = cellText.includes(filterValue)
+            }
             if (keyCell) {
                 const cellText = keyCell.textContent.toLowerCase();
-                row.style.display = cellText.includes(filterValue) ? '' : 'none';
+                row.style.display = (cellText.includes(filterValue) || show) ? '' : 'none';
+            }
+        }
+    });
+
+    // 为事件名称表格添加筛选功能 (搜索原事件名称 enName)
+    eventSearchInputTag.addEventListener('keyup', function () {
+        const filterValue = this.value.toLowerCase(); // 获取搜索框的值并转为小写
+        const tableBody = document.getElementById('event-table-body');
+        const rows = tableBody.getElementsByTagName('tr');
+        // 如果输入为空，显示所有行并重置颜色
+        if (filterValue === '') {
+            for (let row of rows) {
+                row.style.backgroundColor = ''; // 重置背景色
+            }
+            return;
+        }
+        const tags = filterValue.split(',').map(tag => tag.trim()).filter(tag => tag !== '');
+
+        for (let row of rows) {
+            const enNameCell = row.cells[1]; // 原事件名称列
+            const enNameCell2 = row.cells[2]; // 第二列（根据您的代码）
+            let matchFound = false;
+
+            // 检查两列中是否有任意一个单元格的值完全等于任一标签
+            if (enNameCell || enNameCell2) {
+                const cell1Text = enNameCell ? enNameCell.textContent.toLowerCase().trim() : '';
+                const cell2Text = enNameCell2 ? enNameCell2.textContent.toLowerCase().trim() : '';
+
+                // 检查是否完全匹配任一标签
+                matchFound = tags.some(tag =>
+                    cell1Text === tag || cell2Text === tag
+                );
+            }
+
+            // 根据匹配结果设置行的显示和颜色
+            if (matchFound) {
+                row.style.backgroundColor = '#ffcccc'; // 设置红色背景
+            } else {
+                row.style.backgroundColor = ''; // 重置背景色
+            }
+        }
+    });
+
+    paramSearchInputTag.addEventListener('keyup', function () {
+        const filterValue = this.value.toLowerCase(); // 获取搜索框的值并转为小写
+        const tableBody = document.getElementById('param-table-body');
+        const rows = tableBody.getElementsByTagName('tr');
+        // 如果输入为空，显示所有行并重置颜色
+        if (filterValue === '') {
+            for (let row of rows) {
+                row.style.backgroundColor = ''; // 重置背景色
+            }
+            return;
+        }
+        const tags = filterValue.split(',').map(tag => tag.trim()).filter(tag => tag !== '');
+
+        for (let row of rows) {
+            const enNameCell = row.cells[0]; // 原事件名称列
+            const enNameCell2 = row.cells[1]; // 第二列（根据您的代码）
+            let matchFound = false;
+
+            // 检查两列中是否有任意一个单元格的值完全等于任一标签
+            if (enNameCell || enNameCell2) {
+                const cell1Text = enNameCell ? enNameCell.textContent.toLowerCase().trim() : '';
+                const cell2Text = enNameCell2 ? enNameCell2.textContent.toLowerCase().trim() : '';
+
+                // 检查是否完全匹配任一标签
+                matchFound = tags.some(tag =>
+                    cell1Text === tag || cell2Text === tag
+                );
+            }
+
+            // 根据匹配结果设置行的显示和颜色
+            if (matchFound) {
+                row.style.backgroundColor = '#ffcccc'; // 设置红色背景
+            } else {
+                row.style.backgroundColor = ''; // 重置背景色
+            }
+        }
+    });
+
+    valueSearchInputTag.addEventListener('keyup', function () {
+        const filterValue = this.value.toLowerCase(); // 获取搜索框的值并转为小写
+        const tableBody = document.getElementById('value-table-body');
+        const rows = tableBody.getElementsByTagName('tr');
+        // 如果输入为空，显示所有行并重置颜色
+        if (filterValue === '') {
+            for (let row of rows) {
+                row.style.backgroundColor = ''; // 重置背景色
+            }
+            return;
+        }
+        const tags = filterValue.split(',').map(tag => tag.trim()).filter(tag => tag !== '');
+
+        for (let row of rows) {
+            const enNameCell = row.cells[0]; // 原事件名称列
+            const enNameCell2 = row.cells[1]; // 第二列（根据您的代码）
+            let matchFound = false;
+
+            // 检查两列中是否有任意一个单元格的值完全等于任一标签
+            if (enNameCell || enNameCell2) {
+                const cell1Text = enNameCell ? enNameCell.textContent.toLowerCase().trim() : '';
+                const cell2Text = enNameCell2 ? enNameCell2.textContent.toLowerCase().trim() : '';
+
+                // 检查是否完全匹配任一标签
+                matchFound = tags.some(tag =>
+                    cell1Text === tag || cell2Text === tag
+                );
+            }
+
+            // 根据匹配结果设置行的显示和颜色
+            if (matchFound) {
+                row.style.backgroundColor = '#ffcccc'; // 设置红色背景
+            } else {
+                row.style.backgroundColor = ''; // 重置背景色
             }
         }
     });
