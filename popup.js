@@ -3,6 +3,7 @@ let parsedData = null;
 // popup.js
 document.addEventListener('DOMContentLoaded', () => {
     tableSearch();
+    initCopyButtons();
     const dropZone = document.getElementById('drop-zone');
     const fileInput = document.getElementById('csvFile');
     const replaceStatus = document.getElementById('replaceStatus');
@@ -470,4 +471,169 @@ function tableSearch() {
             }
         }
     });
+}
+
+// 生成随机字符串（5-10位字母数字）
+function generateRandomString() {
+    const length = Math.floor(Math.random() * 6) + 5; // 5-10位
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+}
+
+
+
+// 将事件名称转换为Dart枚举名
+function toDartEnumName(eventName) {
+    if (!eventName) return '';
+
+    // 移除特殊字符，用下划线连接
+    return eventName
+        .replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_')
+        .toLowerCase();
+}
+
+function insertRandomToEnumName(baseName) {
+    if (!baseName) return '';
+
+    const randomStr = generateRandomString();
+    const insertPosition = Math.floor(baseName.length / 2);
+
+    // 在中间位置插入随机字符串
+    return baseName.slice(0, insertPosition) + randomStr + baseName.slice(insertPosition);
+}
+
+
+// 复制当前表格为Dart枚举
+function copyCurrentTableAsDartEnum() {
+    // 获取当前激活的标签
+    const activeTab = document.querySelector('.tab-btn.active');
+    if (!activeTab) return;
+
+    const tableType = activeTab.getAttribute('data-tab');
+    let rows, enumNamePrefix;
+
+    // 根据表格类型确定对应的元素
+    switch (tableType) {
+        case 'event-table':
+            rows = Array.from(document.querySelectorAll('#event-table-body tr')).filter(row =>
+                row.style.display !== 'none' && row.offsetParent !== null
+            );
+            enumNamePrefix = 'Event';
+            break;
+        case 'param-table':
+            rows = Array.from(document.querySelectorAll('#param-table-body tr')).filter(row =>
+                row.style.display !== 'none' && row.offsetParent !== null
+            );
+            enumNamePrefix = 'Param';
+            break;
+        case 'value-table':
+            rows = Array.from(document.querySelectorAll('#value-table-body tr')).filter(row =>
+                row.style.display !== 'none' && row.offsetParent !== null
+            );
+            enumNamePrefix = 'Value';
+            break;
+    }
+
+    if (rows.length === 0) {
+        alert('当前表格没有数据');
+        return;
+    }
+
+    // 构建Dart枚举代码
+    let dartCode = `enum ${enumNamePrefix}Enum {\n`;
+    const usedEnumNames = new Set(); // 避免枚举名重复
+
+    rows.forEach(row => {
+        const cells = Array.from(row.querySelectorAll('td'));
+
+        if (tableType === 'event-table' && cells.length >= 3) {
+            // 事件表格：有3列
+            const originalName = cells[1].textContent.trim(); // 原事件名称
+            const obfuscatedValue = cells[2].textContent.trim(); // 混淆值
+            const eventName = cells[0].textContent.trim(); // 用于注释
+
+            if (originalName && obfuscatedValue) {
+                // 生成枚举名：原事件名称 + 随机数
+                let baseEnumName = toDartEnumName(originalName);
+                if (!baseEnumName) {
+                    baseEnumName = toDartEnumName(eventName) || 'event';
+                }
+
+                let finalEnumName = insertRandomToEnumName(baseEnumName);
+
+                // 确保枚举名唯一
+                let counter = 1;
+                while (usedEnumNames.has(finalEnumName)) {
+                    finalEnumName = `${baseEnumName}_${randomStr}_${counter}`;
+                    counter++;
+                }
+                usedEnumNames.add(finalEnumName);
+
+                dartCode += `  ${finalEnumName}("${obfuscatedValue}"), // ${eventName}\n`;
+            }
+        } else if ((tableType === 'param-table' || tableType === 'value-table') && cells.length >= 2) {
+            // 参数表格和参数值表格：有2列
+            const keyName = cells[0].textContent.trim(); // 原参数名/上报参数名
+            const obfuscatedValue = cells[1].textContent.trim(); // 混淆值
+
+            if (keyName && obfuscatedValue) {
+                // 生成枚举名：参数名 + 随机数
+                let baseEnumName = toDartEnumName(keyName);
+                if (!baseEnumName) {
+                    baseEnumName = 'param';
+                }
+
+
+                let finalEnumName = insertRandomToEnumName(baseEnumName);
+
+                // 确保枚举名唯一
+                let counter = 1;
+                while (usedEnumNames.has(finalEnumName)) {
+                    finalEnumName = `${baseEnumName}_${randomStr}_${counter}`;
+                    counter++;
+                }
+                usedEnumNames.add(finalEnumName);
+
+                dartCode += `  ${finalEnumName}("${obfuscatedValue}"), // ${keyName}\n`;
+            }
+        }
+    });
+
+    // 移除最后一个逗号
+    dartCode = dartCode.trim();
+    if (dartCode.endsWith(',')) {
+        dartCode = dartCode.slice(0, -1);
+    }
+
+    dartCode += `\n\n  final String value;\n\n  const ${enumNamePrefix}Enum(this.value);\n}`;
+
+    // 复制到剪贴板
+    navigator.clipboard.writeText(dartCode).then(() => {
+        const copyBtn = document.getElementById('copy-current-table');
+        const originalText = copyBtn.textContent;
+
+        copyBtn.textContent = 'Copy successed ✓';
+        copyBtn.style.backgroundColor = '#17a2b8';
+
+        setTimeout(() => {
+            copyBtn.textContent = originalText;
+            copyBtn.style.backgroundColor = '#28a745';
+        }, 1500);
+
+    }).catch(err => {
+        console.error('复制失败: ', err);
+        alert('复制失败，请手动复制');
+    });
+}
+
+// 初始化复制按钮
+function initCopyButtons() {
+    const copyBtn = document.getElementById('copy-current-table');
+    if (copyBtn) {
+        copyBtn.addEventListener('click', copyCurrentTableAsDartEnum);
+    }
 }

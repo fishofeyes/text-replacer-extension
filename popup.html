@@ -20,7 +20,6 @@
         </div>
 
         <div class="section">
-            <h3>选择项目</h3>
             <div id="dropdown-container">
                 <select id="project-dropdown">
                     <option value="">请选择项目</option>
@@ -32,13 +31,12 @@
             <button id="resetBtn">混淆映射</button>
         </div>
         <div class="section">
-            <h3>数据表格</h3>
-            <div class="tab-buttons">
+            <div class="tab-header">
                 <button class="tab-btn active" data-tab="event-table">上报事件</button>
                 <button class="tab-btn" data-tab="param-table">上报参数</button>
                 <button class="tab-btn" data-tab="value-table">上报参数值</button>
             </div>
-
+            <button id="copy-current-table" class="copy-current-btn" title="复制当前表格为Dart枚举">Copy to Dart</button>
             <!-- 事件名称表格 -->
             <div id="event-table" class="table-container active">
                 <input type="text" id="event-search" placeholder="搜索原事件名称 (enName)" class="table-search-input">
