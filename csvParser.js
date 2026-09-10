@@ -64,6 +64,7 @@ function parseExcelData(excelData) {
         if (!row || row.length === 0) continue;
         // 添加项目下的所有数据（从第二列开始）
         for (let j = 2; j < row.length; j++) {
+            if (row[0] === undefined || row[1] === undefined) continue; // 确保第一列和第二列存在
             const eventName = row[0].trim(); // 第一列内容
             const enName = row[1].trim();    // 第二列内容
             const projectName = projects[j - 2];
@@ -89,7 +90,7 @@ function parseExcelParams(excelData) {
     for (let i = 1; i < excelData.length; i++) {
         const row = excelData[i];
         if (!row || row.length === 0) continue;
-
+        if (row[0] === undefined) continue; // 确保第一列和第二列存在
         const pName = row[0].trim(); // 第一列内容
 
         for (let j = 1; j < row.length; j++) {
@@ -111,7 +112,7 @@ function parseValuesData(excelData) {
     for (let i = 1; i < excelData.length; i++) {
         const row = excelData[i];
         if (!row || row.length === 0) continue;
-
+        if (row[0] === undefined) continue; // 确保第一列和第二列存在
         const pName = row[0].trim(); // 第一列内容
 
         for (let j = 1; j < row.length; j++) {
