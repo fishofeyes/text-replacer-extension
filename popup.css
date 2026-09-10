@@ -141,6 +141,124 @@ input[type="file"] {
     font-style: italic;
 }
 
+/* ===== 项目选择：可搜索下拉框 ===== */
+.project-combobox {
+    position: relative;
+}
+
+.project-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.project-input {
+    width: 100%;
+    padding: 8px 30px 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    box-sizing: border-box;
+    background-color: #fff;
+}
+
+.project-input:focus {
+    outline: none;
+    border-color: #4e73df;
+    box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.1);
+}
+
+.project-combobox.open .project-input {
+    border-color: #4e73df;
+}
+
+.project-combobox.has-selection .project-input {
+    border-color: #4CAF50;
+    font-weight: bold;
+}
+
+.project-clear {
+    position: absolute;
+    right: 4px;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    line-height: 1;
+    font-size: 16px;
+    color: #999;
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.project-clear:hover {
+    color: #333;
+    background-color: #eee;
+}
+
+.project-list {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    z-index: 100;
+    max-height: 220px;
+    overflow-y: auto;
+    margin: 0;
+    padding: 4px 0;
+    list-style: none;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    box-sizing: border-box;
+}
+
+.project-list[hidden] {
+    display: none;
+}
+
+.project-item {
+    padding: 7px 12px;
+    font-size: 14px;
+    color: #333;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.project-item:hover,
+.project-item.active {
+    background-color: #f0f4ff;
+}
+
+.project-item.selected {
+    color: #2e7d32;
+    font-weight: bold;
+}
+
+.project-item.selected::after {
+    content: '✓';
+    float: right;
+    color: #4CAF50;
+}
+
+.project-item mark {
+    background-color: #fff3a3;
+    color: inherit;
+    padding: 0;
+}
+
+.project-empty {
+    padding: 7px 12px;
+    font-size: 13px;
+    color: #999;
+    font-style: italic;
+    cursor: default;
+}
+
 .table-search-input {
     width: 100%;
     padding: 10px 16px;

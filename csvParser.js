@@ -125,23 +125,9 @@ function parseValuesData(excelData) {
     }
     return values;
 }
-// 创建下拉列表
+// 创建下拉列表（支持搜索 + 选择，实际渲染由 popup.js 的 setProjectOptions 完成）
 function createDropdown(projectNames) {
     console.log('Creating dropdown with projects:', projectNames);
-    const dropdown = document.getElementById('project-dropdown');
-    dropdown.innerHTML = ''; // 清空现有选项
-    // 添加默认选项
-    const defaultOption = document.createElement('option');
-    defaultOption.value = '';
-    defaultOption.textContent = '请选择项目';
-    dropdown.appendChild(defaultOption);
-
-    // 添加项目选项
-    projectNames.forEach(project => {
-        const option = document.createElement('option');
-        option.value = project;
-        option.textContent = project;
-        dropdown.appendChild(option);
-    });
-    return dropdown;
+    setProjectOptions(projectNames);
+    return document.getElementById('project-search');
 }

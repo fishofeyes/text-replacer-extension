@@ -20,10 +20,15 @@
         </div>
 
         <div class="section">
-            <div id="dropdown-container">
-                <select id="project-dropdown">
-                    <option value="">请选择项目</option>
-                </select>
+            <div id="dropdown-container" class="project-combobox">
+                <div class="project-input-wrap">
+                    <input type="text" id="project-search" class="project-input" placeholder="搜索或选择项目"
+                        autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list"
+                        aria-expanded="false" aria-controls="project-list">
+                    <button type="button" id="project-clear" class="project-clear" title="清除选择"
+                        aria-label="清除选择" hidden>×</button>
+                </div>
+                <ul id="project-list" class="project-list" role="listbox" aria-label="项目列表" hidden></ul>
             </div>
         </div>
 

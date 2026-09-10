@@ -4,6 +4,7 @@ let parsedData = null;
 document.addEventListener('DOMContentLoaded', () => {
     tableSearch();
     initCopyButtons();
+    initProjectCombobox();
     const dropZone = document.getElementById('drop-zone');
     const fileInput = document.getElementById('csvFile');
     const replaceStatus = document.getElementById('replaceStatus');
@@ -152,34 +153,300 @@ document.addEventListener('DOMContentLoaded', () => {
 
 document.getElementById('resetBtn').addEventListener('click', () => {
     if (currProjectId) {
-        chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
-            chrome.tabs.sendMessage(tabs[0].id, {
-                action: "replace",
-                projectId: currProjectId
-            });
-        });
+        sendReplaceMessage(currProjectId);
     }
 });
 
-document.getElementById('project-dropdown').addEventListener('change', function () {
-    if (this.value) {
-        currProjectId = this.value;
-        if (currProjectId) {
-            chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
-                chrome.tabs.sendMessage(tabs[0].id, {
-                    action: "replace",
-                    projectId: currProjectId
-                });
-            });
-        }
+// ==================== 项目选择：可搜索下拉框 ====================
+// 全局下拉框状态
+let projectOptions = [];      // 全部项目名
+let filteredProjects = [];    // 当前搜索过滤后的项目名
+let activeProjectIndex = -1;  // 键盘高亮项索引
 
-        if (currProjectId) {
+function getProjectInput() {
+    return document.getElementById('project-search');
+}
+
+// 初始化项目下拉框（既能搜索，也能点选）
+function initProjectCombobox() {
+    const input = getProjectInput();
+    const listEl = document.getElementById('project-list');
+    if (!input || !listEl) return;
+
+    // 聚焦：展示全部项目，并全选文本，方便直接输入关键词替换
+    input.addEventListener('focus', () => {
+        activeProjectIndex = -1;
+        openProjectList('');
+        input.select();
+    });
+
+    // 输入：实时过滤
+    input.addEventListener('input', () => {
+        activeProjectIndex = -1;
+        openProjectList(input.value);
+        updateClearButton();
+    });
+
+    // 键盘操作：上下移动、回车选中、Esc 取消
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (listEl.hidden) openProjectList(input.value);
+            moveActiveProject(1);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (listEl.hidden) openProjectList(input.value);
+            moveActiveProject(-1);
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (filteredProjects[activeProjectIndex]) {
+                selectProject(filteredProjects[activeProjectIndex]);
+            } else {
+                // 没有高亮项时，若输入的内容正好是某个项目名则直接选中
+                const exact = findExactProject(input.value);
+                if (exact) selectProject(exact);
+            }
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            closeProjectList();
+            input.value = currProjectId || '';
+            updateClearButton();
+            input.blur();
+        }
+    });
+
+    // 失焦：延时关闭，保证列表项的点击事件先触发
+    input.addEventListener('blur', () => {
+        setTimeout(() => {
+            if (document.activeElement === input) return;
+            closeProjectList();
+            const typed = input.value.trim();
+            const exact = findExactProject(typed);
+            if (exact && exact !== currProjectId) {
+                selectProject(exact);
+                return;
+            }
+            // 输入内容不是有效项目时，恢复成当前已选项目
+            input.value = currProjectId || '';
+            updateClearButton();
+        }, 150);
+    });
+
+    // 点击列表时不希望输入框失焦
+    listEl.addEventListener('mousedown', (e) => e.preventDefault());
+
+    // 点选项目
+    listEl.addEventListener('click', (e) => {
+        const item = e.target.closest('li[data-project]');
+        if (!item) return;
+        selectProject(item.dataset.project);
+    });
+
+    // 清除按钮：取消当前选择
+    const clearBtn = document.getElementById('project-clear');
+    if (clearBtn) {
+        clearBtn.addEventListener('mousedown', (e) => e.preventDefault());
+        clearBtn.addEventListener('click', () => {
+            selectProject(null);
+            input.focus();
+            activeProjectIndex = -1;
+            openProjectList('');
+        });
+    }
+
+    // 点击下拉框外部时收起列表
+    document.addEventListener('click', (e) => {
+        const container = document.getElementById('dropdown-container');
+        if (container && !container.contains(e.target)) closeProjectList();
+    });
+
+    renderProjectList('');
+    updateClearButton();
+}
+
+// createDropdown() 调用这里，写入项目列表
+function setProjectOptions(projectNames) {
+    projectOptions = Array.from(new Set((projectNames || [])
+        .map(name => (name === null || name === undefined) ? '' : String(name).trim())
+        .filter(Boolean)));
+
+    // 已选项目不在新列表中时清除选择
+    if (currProjectId && !projectOptions.includes(currProjectId)) {
+        selectProject(null);
+    } else {
+        const input = getProjectInput();
+        if (input) input.value = currProjectId || '';
+    }
+
+    const input = getProjectInput();
+    if (input && document.activeElement === input) {
+        activeProjectIndex = -1;
+        openProjectList(input.value);
+    } else {
+        closeProjectList();
+        renderProjectList('');
+    }
+    updateClearButton();
+}
+
+function openProjectList(keyword) {
+    const input = getProjectInput();
+    const listEl = document.getElementById('project-list');
+    const container = document.getElementById('dropdown-container');
+    if (!input || !listEl) return;
+
+    renderProjectList(keyword === undefined ? input.value : keyword);
+    listEl.hidden = false;
+    input.setAttribute('aria-expanded', 'true');
+    if (container) container.classList.add('open');
+}
+
+function closeProjectList() {
+    const input = getProjectInput();
+    const listEl = document.getElementById('project-list');
+    const container = document.getElementById('dropdown-container');
+    if (listEl) listEl.hidden = true;
+    activeProjectIndex = -1;
+    if (input) input.setAttribute('aria-expanded', 'false');
+    if (container) container.classList.remove('open');
+}
+
+// 根据关键词渲染项目列表
+function renderProjectList(keyword) {
+    const listEl = document.getElementById('project-list');
+    if (!listEl) return;
+
+    const kw = (keyword || '').trim().toLowerCase();
+    filteredProjects = kw
+        ? projectOptions.filter(name => name.toLowerCase().includes(kw))
+        : projectOptions.slice();
+
+    // 只有一个匹配项时直接高亮，方便搜完直接回车选中
+    if (filteredProjects.length === 1) {
+        activeProjectIndex = 0;
+    } else if (activeProjectIndex >= filteredProjects.length) {
+        activeProjectIndex = -1;
+    }
+
+    listEl.innerHTML = '';
+
+    if (filteredProjects.length === 0) {
+        const empty = document.createElement('li');
+        empty.className = 'project-empty';
+        empty.textContent = projectOptions.length > 0 ? '没有匹配的项目' : '请先导入文件';
+        listEl.appendChild(empty);
+        return;
+    }
+
+    filteredProjects.forEach((name, index) => {
+        const item = document.createElement('li');
+        item.className = 'project-item';
+        item.dataset.project = name;
+        item.setAttribute('role', 'option');
+        if (name === currProjectId) {
+            item.classList.add('selected');
+            item.setAttribute('aria-selected', 'true');
+        }
+        if (index === activeProjectIndex) item.classList.add('active');
+        item.innerHTML = highlightMatch(name, kw);
+        listEl.appendChild(item);
+    });
+}
+
+// 键盘上下移动高亮项
+function moveActiveProject(delta) {
+    if (filteredProjects.length === 0) return;
+
+    if (activeProjectIndex < 0) {
+        activeProjectIndex = delta > 0 ? 0 : filteredProjects.length - 1;
+    } else {
+        activeProjectIndex = (activeProjectIndex + delta + filteredProjects.length) % filteredProjects.length;
+    }
+
+    const items = document.querySelectorAll('#project-list .project-item');
+    items.forEach((item, index) => item.classList.toggle('active', index === activeProjectIndex));
+
+    const active = items[activeProjectIndex];
+    if (active && active.scrollIntoView) {
+        active.scrollIntoView({ block: 'nearest' });
+    }
+}
+
+// 输入内容是否正好等于某个项目名
+function findExactProject(text) {
+    const value = (text || '').trim().toLowerCase();
+    if (!value) return null;
+    return projectOptions.find(name => name.toLowerCase() === value) || null;
+}
+
+// 高亮匹配到的关键词
+function highlightMatch(name, keyword) {
+    const safeName = escapeHtml(name);
+    if (!keyword) return safeName;
+
+    const index = name.toLowerCase().indexOf(keyword);
+    if (index < 0) return safeName;
+
+    return escapeHtml(name.slice(0, index))
+        + '<mark>' + escapeHtml(name.slice(index, index + keyword.length)) + '</mark>'
+        + escapeHtml(name.slice(index + keyword.length));
+}
+
+function escapeHtml(text) {
+    return String(text).replace(/[&<>"']/g, ch => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    }[ch]));
+}
+
+function updateClearButton() {
+    const clearBtn = document.getElementById('project-clear');
+    if (!clearBtn) return;
+    const input = getProjectInput();
+    const hasText = !!(input && input.value.trim());
+    clearBtn.hidden = !currProjectId && !hasText;
+}
+
+// 选中项目：更新状态、通知页面替换、刷新三张表格
+function selectProject(projectName) {
+    currProjectId = projectName || null;
+
+    const input = getProjectInput();
+    if (input) input.value = currProjectId || '';
+
+    closeProjectList();
+
+    const container = document.getElementById('dropdown-container');
+    if (container) container.classList.toggle('has-selection', !!currProjectId);
+
+    if (currProjectId) {
+        sendReplaceMessage(currProjectId);
+        if (parsedData) {
             updateAllTables(currProjectId, parsedData);
         } else {
             clearAllTables();
         }
+    } else {
+        clearAllTables();
     }
-});
+
+    updateClearButton();
+}
+
+// 通知页面执行文本替换
+function sendReplaceMessage(projectId) {
+    if (!projectId) return;
+    chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+        if (!tabs || tabs.length === 0 || tabs[0].id === undefined) return;
+        chrome.tabs.sendMessage(tabs[0].id, { action: "replace", projectId }, () => {
+            // 读掉 lastError，避免在当前页面没有 content script 时报连接错误
+            void chrome.runtime.lastError;
+        });
+    });
+}
 
 // 更新所有表格
 function updateAllTables(project, projectData) {
@@ -227,7 +494,7 @@ function updateParamTable(project, projectData) {
     const noDataMsg = document.getElementById('param-no-data');
     paramTableBody.innerHTML = '';
 
-    const projectParams = projectData.params[project];
+    const projectParams = (projectData.params || {})[project];
     if (projectParams && Object.keys(projectParams).length > 0) {
         noDataMsg.style.display = 'none';
         for (const [paramName, obfuscated] of Object.entries(projectParams)) {
@@ -249,7 +516,7 @@ function updateValueTable(project, projectData) {
     const noDataMsg = document.getElementById('value-no-data');
     valueTableBody.innerHTML = '';
 
-    const projectParams = projectData.values[project];
+    const projectParams = (projectData.values || {})[project];
     if (projectParams && Object.keys(projectParams).length > 0) {
         noDataMsg.style.display = 'none';
         for (const [paramName, obfuscated] of Object.entries(projectParams)) {
